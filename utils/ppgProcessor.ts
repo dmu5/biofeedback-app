@@ -19,20 +19,23 @@ export class PPGProcessor {
   }
 
   // --- Core Algorithm: Peak Detection and RR Interval Calculation ---
-  public processFrame(redChannelMean: number, timestamp: number) {
+  // Accepts mean channel values for RGB and a timestamp
+  public processFrame(redChannelMean: number, greenChannelMean: number, blueChannelMean: number, timestamp: number) {
     if (!this.isRunning) return;
 
     // 0. Finger Placement / Ghost Detection
-    // If the red channel is too dark, assume no finger is present or it's pointing at the room.
-    // (Actual threshold depends on hardware, usually > 100 on a 0-255 scale when torch illuminates flesh)
-    if (redChannelMean < 50) {
-      // Clear buffer to restart measuring since finger was removed
+    // Real finger under torch typically produces high red (>150) and low green/blue (<60).
+    // If the frame doesn't look like a finger, immediately reset and wait for a proper placement.
+    if (redChannelMean < 150 || greenChannelMean > 60 || blueChannelMean > 60) {
+      // Immediate hard reset: clear buffers and intervals so no old data lingers
       this.redChannelBuffer = [];
+      this.rrIntervals = [];
+      this.lastPeakTime = 0;
       this.onUpdate(0, 'WAITING', 0);
       return;
     }
 
-    // 1. Maintain Rolling Buffer
+    // 1. Maintain Rolling Buffer (only red channel is used for PPG detection)
     this.redChannelBuffer.push(redChannelMean);
     if (this.redChannelBuffer.length > this.BUFFER_SIZE) {
       this.redChannelBuffer.shift();
@@ -85,8 +88,8 @@ export class PPGProcessor {
           // Calculate BPM: 60,000 ms per minute / avg interval
           const calculatedBpm = Math.round(60000 / avgRR);
 
-          // Update UI with new BPM
-          this.onUpdate(calculatedBpm, 'MEASURING', 1.2); // 1.2 is a pulse animation phase
+          // Update UI with new BPM and emit a pulse phase value > 1 to trigger animation
+          this.onUpdate(calculatedBpm, 'MEASURING', 1.15);
         } else {
           // Just a normal frame during measuring
           this.onUpdate(this.rrIntervals.length > 0 ? Math.round(60000 / (this.rrIntervals.reduce((a, b) => a + b, 0) / this.rrIntervals.length)) : 0, 'MEASURING', 1.0);
@@ -119,21 +122,21 @@ export class PPGProcessor {
       // Simulate a user placing their finger after 1 second
       if (framesSimulated < 30) {
         // Feed dark data to trigger ghost detection
-        this.processFrame(10, this.simulatedTime);
+        this.processFrame(10, 10, 10, this.simulatedTime);
         return;
       }
 
       // Simulate a motion artifact roughly 3 seconds in
       if (framesSimulated > 90 && framesSimulated < 100) {
         // Feed extreme noise into the algorithm to trigger MOTION_WARNING
-        this.processFrame(Math.random() * 200, this.simulatedTime);
+        this.processFrame(Math.random() * 200, Math.random() * 200, Math.random() * 200, this.simulatedTime);
         return;
       }
 
       // Simulate real photoplethysmography (PPG) waveform data
       // A typical PPG wave consists of a DC component (baseline) and an AC component (pulse)
       // We simulate a heart rate of ~75 BPM (which is a peak every 800ms)
-      const baseIntensity = 150;
+      const baseIntensity = 170;
       const heartbeatFreq = 75 / 60; // Hz
       const acComponent = 15 * Math.sin(2 * Math.PI * heartbeatFreq * (this.simulatedTime / 1000));
 
@@ -141,9 +144,11 @@ export class PPGProcessor {
       const noise = (Math.random() * 4) - 2;
 
       const simulatedRedMean = baseIntensity + acComponent + noise;
+      const simulatedGreenMean = 20 + (Math.random() * 5 - 2.5);
+      const simulatedBlueMean = 18 + (Math.random() * 5 - 2.5);
 
-      // Feed the synthetic data into the REAL algorithm
-      this.processFrame(simulatedRedMean, this.simulatedTime);
+      // Feed the synthetic RGB data into the REAL algorithm
+      this.processFrame(simulatedRedMean, simulatedGreenMean, simulatedBlueMean, this.simulatedTime);
 
       // Finish after ~10 seconds of processing
       if (framesSimulated >= 300) {

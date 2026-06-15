@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, Switch } from 'react-native';
-import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Switch, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import i18n from '../utils/i18n';
 
 type Phase = 'inhale' | 'hold1' | 'exhale' | 'hold2';
@@ -13,52 +13,74 @@ export default function BreathingScreen() {
   const [phase, setPhase] = useState<Phase>('inhale');
 
   const circleAnim = useRef(new Animated.Value(1)).current;
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const phaseDuration = 4000; // 4 seconds
 
+  // Start the breathing cycle on mount
   useEffect(() => {
-    runCycle();
+    startCycle();
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      // Clear all timeouts and cancel any vibration on unmount
+      timersRef.current.forEach(t => clearTimeout(t));
+      timersRef.current = [];
+      Vibration.cancel();
     };
-  }, [vibrationEnabled]); // Dependency on vibrationEnabled so that closure binds current state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const runCycle = () => {
-    // 1. Inhale
-    setPhase('inhale');
-    if (vibrationEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Animated.timing(circleAnim, {
-      toValue: 2.5,
-      duration: phaseDuration,
-      useNativeDriver: true,
-    }).start();
+  // Stop vibrations immediately when user disables the switch
+  useEffect(() => {
+    if (!vibrationEnabled) {
+      Vibration.cancel();
+    }
+  }, [vibrationEnabled]);
 
-    // 2. Hold
-    timerRef.current = setTimeout(() => {
-      setPhase('hold1');
-      if (vibrationEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  const clearAllTimers = () => {
+    timersRef.current.forEach(t => clearTimeout(t));
+    timersRef.current = [];
+  };
 
-      // 3. Exhale
-      timerRef.current = setTimeout(() => {
-        setPhase('exhale');
-        if (vibrationEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Animated.timing(circleAnim, {
-          toValue: 1,
-          duration: phaseDuration,
-          useNativeDriver: true,
-        }).start();
+  function startCycle() {
+    clearAllTimers();
 
-        // 4. Hold
-        timerRef.current = setTimeout(() => {
-          setPhase('hold2');
-          if (vibrationEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    // helper to schedule a phase change
+    const schedule = (fn: () => void, delay: number) => {
+      const id = setTimeout(fn, delay);
+      timersRef.current.push(id);
+      return id;
+    };
 
-          // Loop
-          timerRef.current = setTimeout(runCycle, phaseDuration);
+    // Kick off the repeating cycle
+    const loop = () => {
+      setPhase('inhale');
+      Animated.timing(circleAnim, {
+        toValue: 2.5,
+        duration: phaseDuration,
+        useNativeDriver: true,
+      }).start();
+
+      schedule(() => {
+        setPhase('hold1');
+
+        schedule(() => {
+          setPhase('exhale');
+          Animated.timing(circleAnim, {
+            toValue: 1,
+            duration: phaseDuration,
+            useNativeDriver: true,
+          }).start();
+
+          schedule(() => {
+            setPhase('hold2');
+            // schedule next cycle
+            schedule(loop, phaseDuration);
+          }, phaseDuration);
         }, phaseDuration);
       }, phaseDuration);
-    }, phaseDuration);
+    };
+
+    loop();
   };
 
   const getPhaseText = () => {
@@ -70,12 +92,28 @@ export default function BreathingScreen() {
     }
   };
 
+  // Vibrate only at phase changes and only when enabled
+  const previousPhaseRef = useRef<Phase>(phase);
+  useEffect(() => {
+    const prev = previousPhaseRef.current;
+    if (phase !== prev) {
+      // Only vibrate on transitions (e.g., inhale -> hold1)
+      if (vibrationEnabled) {
+        // Use Haptics for a short, deterministic pulse
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      } else {
+        Vibration.cancel();
+      }
+      previousPhaseRef.current = phase;
+    }
+  }, [phase, vibrationEnabled]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{i18n.t('relax_breathing')}</Text>
 
-        <View style={styles.switchContainer}>
+        <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>{i18n.t('vibration')}</Text>
           <Switch
             value={vibrationEnabled}
@@ -107,13 +145,21 @@ const styles = StyleSheet.create({
   },
   header: {
     width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     marginTop: 40,
     backgroundColor: '#1E1E1E',
     padding: 20,
     borderRadius: 16,
+  },
+  switchRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingHorizontal: 4,
   },
   title: {
     color: '#E0E0E0',

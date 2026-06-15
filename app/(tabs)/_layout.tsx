@@ -15,15 +15,19 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: '#1E1E1E',
           borderTopColor: '#333',
-          paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 15,
-          paddingTop: 10,
-          height: 65 + (insets.bottom > 0 ? insets.bottom : 0),
+          paddingTop: 0,
+          paddingBottom: 0,
+          height: 65,
+          justifyContent: 'center',
+          alignItems: 'center',
         },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#888',
         tabBarLabelStyle: {
           fontSize: 14,
           fontWeight: '500',
+          marginTop: 0,
+          marginBottom: 0,
         },
         sceneStyle: {
           backgroundColor: '#121212',

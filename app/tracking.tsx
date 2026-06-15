@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useBioStore } from '../store/useBioStore';
-import { PPGProcessor, TrackingStatus } from '../utils/ppgProcessor';
 import i18n from '../utils/i18n';
+import { PPGProcessor, TrackingStatus } from '../utils/ppgProcessor';
 
 export default function TrackingScreen() {
   const router = useRouter();
@@ -14,7 +14,8 @@ export default function TrackingScreen() {
   // Tracking State
   const [status, setStatus] = useState<TrackingStatus>('WAITING');
   const [currentBpm, setCurrentBpm] = useState<number>(0);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseScaleAnim = useRef(new Animated.Value(1)).current;
+  const pulseOpacityAnim = useRef(new Animated.Value(0.9)).current;
 
   const setHeartRate = useBioStore(state => state.setHeartRate);
   const simulatorRef = useRef<PPGProcessor | null>(null);
@@ -50,23 +51,26 @@ export default function TrackingScreen() {
   }, [status]);
 
   const startSimulation = () => {
+
     simulatorRef.current = new PPGProcessor((bpm, newStatus, phase) => {
       setStatus(newStatus);
       if (bpm > 0) setCurrentBpm(bpm);
 
-      // Animate the pulse icon
-      if (newStatus === 'MEASURING' || newStatus === 'CALIBRATING') {
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 100,
-            useNativeDriver: true,
-          })
+      // Pulse animation: phase > 1 indicates a detected pulse peak
+      if (newStatus === 'MEASURING' && phase && phase > 1) {
+        // stop any current animation and perform a quick pulse
+        pulseScaleAnim.stopAnimation();
+        pulseOpacityAnim.stopAnimation();
+
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(pulseScaleAnim, { toValue: Math.min(1.15, phase), duration: 120, useNativeDriver: true }),
+            Animated.timing(pulseScaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+          ]),
+          Animated.sequence([
+            Animated.timing(pulseOpacityAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+            Animated.timing(pulseOpacityAnim, { toValue: 0.9, duration: 200, useNativeDriver: true }),
+          ])
         ]).start();
       }
 
@@ -131,7 +135,7 @@ export default function TrackingScreen() {
             <View style={styles.targetBox} />
 
             {(status === 'MEASURING' || status === 'DONE') && (
-              <Animated.View style={[styles.bpmContainer, { transform: [{ scale: pulseAnim }] }]}>
+              <Animated.View style={[styles.bpmContainer, { transform: [{ scale: pulseScaleAnim }], opacity: pulseOpacityAnim }]}>
                 <Text style={styles.bpmValue}>{currentBpm}</Text>
                 <Text style={styles.bpmLabel}>BPM</Text>
               </Animated.View>
