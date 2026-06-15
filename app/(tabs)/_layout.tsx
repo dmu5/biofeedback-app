@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import i18n from '../../utils/i18n';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -14,14 +15,14 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: '#1E1E1E',
           borderTopColor: '#333',
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 15,
           paddingTop: 10,
-          height: 60 + (insets.bottom > 0 ? insets.bottom : 0),
+          height: 65 + (insets.bottom > 0 ? insets.bottom : 0),
         },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#888',
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: '500',
         },
         sceneStyle: {
@@ -32,22 +33,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
-          tabBarLabel: 'Dashboard',
+          title: i18n.t('dashboard'),
+          tabBarLabel: i18n.t('dashboard'),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: 'History',
-          tabBarLabel: 'History',
+          title: i18n.t('history'),
+          tabBarLabel: i18n.t('history'),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          tabBarLabel: 'Settings',
+          title: i18n.t('settings'),
+          tabBarLabel: i18n.t('settings'),
         }}
       />
     </Tabs>

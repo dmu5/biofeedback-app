@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
+import i18n from '../../utils/i18n';
 
 export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.surface}>
-        <Text style={styles.title}>History</Text>
-        <Text style={styles.subtitle}>Your previous measurements will appear here.</Text>
+        <Text style={styles.title}>{i18n.t('history')}</Text>
+        <Text style={styles.subtitle}>{i18n.t('previous_measurements')}</Text>
       </View>
     </View>
   );

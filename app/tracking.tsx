@@ -4,6 +4,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useBioStore } from '../store/useBioStore';
 import { PPGProcessor, TrackingStatus } from '../utils/ppgProcessor';
+import i18n from '../utils/i18n';
 
 export default function TrackingScreen() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function TrackingScreen() {
 
   useEffect(() => {
     if (permission?.granted) {
-      // Activate the torch after a short delay
+      // Activate the torch after a short delay to ensure camera readiness
       const timer = setTimeout(() => {
         setIsActive(true);
         startSimulation();
@@ -28,12 +29,25 @@ export default function TrackingScreen() {
 
       return () => {
         clearTimeout(timer);
+        // Ensure torch goes off when navigating away or unmounting
+        setIsActive(false);
         if (simulatorRef.current) {
           simulatorRef.current.stop();
         }
       };
     }
   }, [permission]);
+
+  // Turn off the torch specifically if the measurement is done,
+  // or if we fall back into a waiting state (no finger detected).
+  useEffect(() => {
+    if (status === 'DONE') {
+      setIsActive(false);
+    } else if (status === 'WAITING') {
+      // Still need torch to see if finger comes back
+      setIsActive(true);
+    }
+  }, [status]);
 
   const startSimulation = () => {
     simulatorRef.current = new PPGProcessor((bpm, newStatus, phase) => {
@@ -68,11 +82,11 @@ export default function TrackingScreen() {
 
   const getStatusMessage = () => {
     switch (status) {
-      case 'WAITING': return "❌ Place your finger firmly over the camera lens and flash.";
-      case 'CALIBRATING': return "⏳ Calibrating signal... Keep your finger still.";
-      case 'MEASURING': return "❤️ Analyzing pulse...";
-      case 'MOTION_WARNING': return "⚠️ Too much movement. Relax your hand.";
-      case 'DONE': return "✅ Measurement complete!";
+      case 'WAITING': return i18n.t('status_waiting');
+      case 'CALIBRATING': return i18n.t('status_calibrating');
+      case 'MEASURING': return i18n.t('status_measuring');
+      case 'MOTION_WARNING': return i18n.t('status_motion');
+      case 'DONE': return i18n.t('status_done');
       default: return "";
     }
   };
@@ -89,12 +103,12 @@ export default function TrackingScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.surface}>
-          <Text style={styles.message}>We need your permission to use the camera</Text>
+          <Text style={styles.message}>{i18n.t('need_permission')}</Text>
           <TouchableOpacity style={styles.primaryButton} onPress={requestPermission}>
-            <Text style={styles.buttonText}>Grant Permission</Text>
+            <Text style={styles.buttonText}>{i18n.t('grant_permission')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>Cancel</Text>
+            <Text style={styles.buttonText}>{i18n.t('cancel')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -125,7 +139,7 @@ export default function TrackingScreen() {
           </View>
 
           <TouchableOpacity style={styles.closeButtonOverlay} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>Cancel</Text>
+            <Text style={styles.buttonText}>{i18n.t('cancel')}</Text>
           </TouchableOpacity>
         </View>
       </CameraView>

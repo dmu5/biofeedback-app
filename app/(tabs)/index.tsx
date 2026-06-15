@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBioStore } from '../../store/useBioStore';
+import i18n from '../../utils/i18n';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -13,18 +14,18 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.surface}>
-        <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.subtitle}>Ready to measure your heart rate?</Text>
+        <Text style={styles.title}>{i18n.t('dashboard')}</Text>
+        <Text style={styles.subtitle}>{i18n.t('ready_to_measure')}</Text>
 
         {heartRate !== null && (
           <View style={styles.resultBox}>
-            <Text style={styles.resultLabel}>Last Reading</Text>
+            <Text style={styles.resultLabel}>{i18n.t('last_reading')}</Text>
             <Text style={styles.resultValue}>{heartRate} <Text style={styles.resultUnit}>BPM</Text></Text>
           </View>
         )}
 
         <TouchableOpacity style={styles.button} onPress={handleStartSession}>
-          <Text style={styles.buttonText}>Start Session</Text>
+          <Text style={styles.buttonText}>{i18n.t('start_session')}</Text>
         </TouchableOpacity>
       </View>
     </View>

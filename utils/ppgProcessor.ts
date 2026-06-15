@@ -22,6 +22,16 @@ export class PPGProcessor {
   public processFrame(redChannelMean: number, timestamp: number) {
     if (!this.isRunning) return;
 
+    // 0. Finger Placement / Ghost Detection
+    // If the red channel is too dark, assume no finger is present or it's pointing at the room.
+    // (Actual threshold depends on hardware, usually > 100 on a 0-255 scale when torch illuminates flesh)
+    if (redChannelMean < 50) {
+      // Clear buffer to restart measuring since finger was removed
+      this.redChannelBuffer = [];
+      this.onUpdate(0, 'WAITING', 0);
+      return;
+    }
+
     // 1. Maintain Rolling Buffer
     this.redChannelBuffer.push(redChannelMean);
     if (this.redChannelBuffer.length > this.BUFFER_SIZE) {
@@ -108,7 +118,8 @@ export class PPGProcessor {
 
       // Simulate a user placing their finger after 1 second
       if (framesSimulated < 30) {
-        this.onUpdate(0, 'WAITING', 0);
+        // Feed dark data to trigger ghost detection
+        this.processFrame(10, this.simulatedTime);
         return;
       }
 
