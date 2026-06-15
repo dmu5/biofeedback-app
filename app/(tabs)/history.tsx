@@ -1,10 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
+import i18n from '../../utils/i18n';
 
 export default function HistoryScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>History</Text>
-      <Text style={styles.subtitle}>Your previous measurements will appear here.</Text>
+      <View style={styles.surface}>
+        <Text style={styles.title}>{i18n.t('history')}</Text>
+        <Text style={styles.subtitle}>{i18n.t('previous_measurements')}</Text>
+      </View>
     </View>
   );
 }
@@ -12,20 +15,31 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     backgroundColor: '#121212',
+  },
+  surface: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    minHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
+    color: '#E0E0E0',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#aaa',
+    color: '#A0A0A0',
     textAlign: 'center',
   },
 });

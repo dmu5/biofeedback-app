@@ -15,6 +15,14 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: '#000' }
           }}
         />
+        <Stack.Screen
+          name="breathing"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: '#000' }
+          }}
+        />
       </Stack>
     </>
   );
