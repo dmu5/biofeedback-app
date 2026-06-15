@@ -20,6 +20,12 @@ const translations = {
     status_measuring: "❤️ Analyzing pulse...",
     status_motion: "⚠️ Too much movement. Relax your hand.",
     status_done: "✅ Measurement complete!",
+    reduce_heart_rate: "Reduce Pulse",
+    relax_breathing: "Breathing Exercise",
+    breathe_in: "Breathe In",
+    hold: "Hold",
+    breathe_out: "Breathe Out",
+    vibration: "Vibration",
   },
   ru: {
     dashboard: "Главная",
@@ -39,6 +45,12 @@ const translations = {
     status_measuring: "❤️ Измеряем пульс...",
     status_motion: "⚠️ Слишком много движения. Расслабьте руку.",
     status_done: "✅ Замер завершен!",
+    reduce_heart_rate: "Снизить пульс",
+    relax_breathing: "Дыхательная гимнастика",
+    breathe_in: "Вдох",
+    hold: "Задержка",
+    breathe_out: "Выдох",
+    vibration: "Вибрация",
   }
 };
 

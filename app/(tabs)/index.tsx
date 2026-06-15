@@ -11,6 +11,10 @@ export default function DashboardScreen() {
     router.push('/tracking');
   };
 
+  const handleStartBreathing = () => {
+    router.push('/breathing');
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.surface}>
@@ -21,11 +25,21 @@ export default function DashboardScreen() {
           <View style={styles.resultBox}>
             <Text style={styles.resultLabel}>{i18n.t('last_reading')}</Text>
             <Text style={styles.resultValue}>{heartRate} <Text style={styles.resultUnit}>BPM</Text></Text>
+
+            {heartRate > 90 && (
+              <TouchableOpacity style={styles.reduceButton} onPress={handleStartBreathing}>
+                <Text style={styles.reduceButtonText}>{i18n.t('reduce_heart_rate')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
         <TouchableOpacity style={styles.button} onPress={handleStartSession}>
           <Text style={styles.buttonText}>{i18n.t('start_session')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleStartBreathing}>
+          <Text style={styles.buttonText}>{i18n.t('relax_breathing')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -101,5 +115,21 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: '#333',
+    marginTop: 12,
+  },
+  reduceButton: {
+    marginTop: 16,
+    backgroundColor: '#FF2D55',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  reduceButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
