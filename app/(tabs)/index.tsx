@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useBioStore } from '../../store/useBioStore';
 import i18n from '../../utils/i18n';
 
@@ -8,11 +8,11 @@ export default function DashboardScreen() {
   const heartRate = useBioStore(state => state.heartRate);
 
   const handleStartSession = () => {
-    router.push('/tracking');
+    router.push('/tracking'as any);
   };
 
   const handleStartBreathing = () => {
-    router.push('/breathing');
+    router.push('/breathing'as any);
   };
 
   return (

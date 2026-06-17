@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Switch, Text, TouchableOpacity, Vibration, View } from 'react-native';
@@ -15,21 +14,16 @@ export default function BreathingScreen() {
   const circleAnim = useRef(new Animated.Value(1)).current;
   const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
-  const phaseDuration = 4000; // 4 seconds
+  const phaseDuration = 4000; // 4 секунды
 
-  // Start the breathing cycle on mount
   useEffect(() => {
     startCycle();
     return () => {
-      // Clear all timeouts and cancel any vibration on unmount
-      timersRef.current.forEach(t => clearTimeout(t));
-      timersRef.current = [];
+      clearAllTimers();
       Vibration.cancel();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Stop vibrations immediately when user disables the switch
   useEffect(() => {
     if (!vibrationEnabled) {
       Vibration.cancel();
@@ -44,18 +38,16 @@ export default function BreathingScreen() {
   function startCycle() {
     clearAllTimers();
 
-    // helper to schedule a phase change
     const schedule = (fn: () => void, delay: number) => {
       const id = setTimeout(fn, delay);
       timersRef.current.push(id);
       return id;
     };
 
-    // Kick off the repeating cycle
     const loop = () => {
       setPhase('inhale');
       Animated.timing(circleAnim, {
-        toValue: 2.5,
+        toValue: 2.2,
         duration: phaseDuration,
         useNativeDriver: true,
       }).start();
@@ -73,7 +65,6 @@ export default function BreathingScreen() {
 
           schedule(() => {
             setPhase('hold2');
-            // schedule next cycle
             schedule(loop, phaseDuration);
           }, phaseDuration);
         }, phaseDuration);
@@ -81,28 +72,24 @@ export default function BreathingScreen() {
     };
 
     loop();
-  };
+  }
 
   const getPhaseText = () => {
     switch (phase) {
-      case 'inhale': return i18n.t('breathe_in');
-      case 'exhale': return i18n.t('breathe_out');
+      case 'inhale': return i18n.t('breathe_in') || 'Вдох';
+      case 'exhale': return i18n.t('breathe_out') || 'Выдох';
       case 'hold1':
-      case 'hold2': return i18n.t('hold');
+      case 'hold2': return i18n.t('hold') || 'Задержка';
     }
   };
 
-  // Vibrate only at phase changes and only when enabled
+  // Железная вибрация через родной модуль Android
   const previousPhaseRef = useRef<Phase>(phase);
   useEffect(() => {
     const prev = previousPhaseRef.current;
     if (phase !== prev) {
-      // Only vibrate on transitions (e.g., inhale -> hold1)
       if (vibrationEnabled) {
-        // Use Haptics for a short, deterministic pulse
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      } else {
-        Vibration.cancel();
+        Vibration.vibrate(70); // Чёткий короткий виброимпульс 70мс
       }
       previousPhaseRef.current = phase;
     }
@@ -110,15 +97,16 @@ export default function BreathingScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{i18n.t('relax_breathing')}</Text>
-
+      <View style={styles.headerCard}>
+        <Text style={styles.title}>{i18n.t('relax_breathing') || 'Дыхательная гимнастика'}</Text>
+        <View style={styles.divider} />
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{i18n.t('vibration')}</Text>
+          <Text style={styles.switchLabel}>{i18n.t('vibration') || 'Вибрация'}</Text>
           <Switch
             value={vibrationEnabled}
             onValueChange={setVibrationEnabled}
             trackColor={{ false: '#333', true: '#007AFF' }}
+            thumbColor={vibrationEnabled ? '#FFF' : '#AAA'}
           />
         </View>
       </View>
@@ -129,7 +117,7 @@ export default function BreathingScreen() {
       </View>
 
       <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-        <Text style={styles.buttonText}>{i18n.t('close')}</Text>
+        <Text style={styles.buttonText}>{i18n.t('close') || 'Закрыть'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -138,75 +126,80 @@ export default function BreathingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-    padding: 20,
+    backgroundColor: '#121212',
+    padding: 24,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  header: {
+  headerCard: {
     width: '100%',
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    marginTop: 40,
     backgroundColor: '#1E1E1E',
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 20,
+    marginTop: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2C2C2C',
+  },
+  title: {
+    color: '#FFF',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#2C2C2C',
+    marginVertical: 14,
   },
   switchRow: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingHorizontal: 4,
-  },
-  title: {
-    color: '#E0E0E0',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   switchLabel: {
-    color: '#A0A0A0',
-    marginRight: 10,
+    color: '#E0E0E0',
     fontSize: 16,
+    fontWeight: '500',
   },
   animationContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   circle: {
     position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(0, 122, 255, 0.3)',
-    borderWidth: 2,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
+    borderWidth: 3,
     borderColor: '#007AFF',
   },
   phaseText: {
     color: '#FFF',
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    zIndex: 10,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   closeButton: {
-    backgroundColor: '#333',
-    paddingHorizontal: 40,
+    backgroundColor: '#1E1E1E',
     paddingVertical: 16,
-    borderRadius: 30,
-    marginBottom: 40,
+    borderRadius: 16,
     width: '100%',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
   buttonText: {
-    color: '#FFF',
-    fontSize: 16,
+    color: '#FF3B30',
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });
